@@ -9,6 +9,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <time.h>
+#include <map>
+#include <vector>
+#include <utility>   
 //
 #include "gl_frontEnd.h"
 
@@ -54,6 +57,18 @@ const int MAX_LENGTH_MESSAGE = 32;
 char** message;
 time_t startTime;
 
+// Holds all currently reserved squares
+map<int,int> takenCoords;
+
+//vector of robot structs
+vector<Robot> robots;
+
+//vector of door locations
+vector< pair<int,int> > doorLocation;
+
+
+
+
 //==================================================================================
 //	These are the functions that tie the simulation with the rendering.
 //	Some parts are "don't touch."  Other parts need your intervention
@@ -81,22 +96,23 @@ void displayGridPane(void)
 	//	Important here:  I don't think of the locations (robot/box/door) as x and y, but
 	//	as row and column.  So, the first index is a row (y) coordinate, and the second
 	//	index is a column (x) coordinate.
-	int robotLoc[][2] = {{12, 8}, {6, 9}, {3, 14}, {11, 15}};
-	int boxLoc[][2] = {{6, 7}, {4, 12}, {13, 13}, {8, 12}};
-	int doorAssign[] = {1, 0, 0, 2};	//	door id assigned to each robot-box pair
-	int doorLoc[][2] = {{3, 3}, {8, 11}, {7, 10}};
+	// int robotLoc[][2];
+// int boxLoc[][2];
+// int doorAssign[];	//	door id assigned to each robot-box pair
+// int doorLoc[][2];
+	
 	for (int i=0; i<numBoxes; i++)
 	{
 		//	here I would test if the robot thread is still live
 		//						row				column			row			column
-		drawRobotAndBox(i, robotLoc[i][0], robotLoc[i][1], boxLoc[i][0], boxLoc[i][1], doorAssign[i]);
+		drawRobotAndBox(i, robots[i].roboCD[0], robots[i].roboCD[1], robots[i].boxCD[0],robots[i].boxCD[1] , robots[i].doorID);
 	}
 
 	for (int i=0; i<numDoors; i++)
 	{
 		//	here I would test if the robot thread is still alive
 		//				row				column	
-		drawDoor(i, doorLoc[i][0], doorLoc[i][1]);
+		drawDoor(i, doorLocation[i].first,doorLocation[i].second);
 	}
 
 	//	This call does nothing important. It only draws lines
@@ -179,10 +195,11 @@ int main(int argc, char** argv)
 	//	grid, the number of boxes (and robots), and the number of doors.
 	//	You are going to have to extract these.  For the time being,
 	//	I hard code-some values
-	numRows = 16;
-	numCols = 20;
-	numDoors = 3;
-	numBoxes = 4;
+	numCols = atoi(argv[1]);
+	numRows = atoi(argv[2]);
+	numBoxes = atoi(argv[3]);
+	numDoors = atoi(argv[4]);
+	
 
 	//	Even though we extracted the relevant information from the argument
 	//	list, I still need to pass argc and argv to the front-end init
@@ -222,16 +239,7 @@ void cleanupGridAndLists(void)
 }
 
 
-//==================================================================================
-//
-//	This is a part that you have to edit and add to.
-//
-//==================================================================================
-
-
-void initializeApplication(void)
-{
-	//	Allocate the grid
+void allocateGrid() {
 	grid = (int**) malloc(numRows * sizeof(int*));
 	for (int i=0; i<numRows; i++)
 		grid[i] = (int*) malloc(numCols * sizeof(int));
@@ -239,7 +247,85 @@ void initializeApplication(void)
 	message = (char**) malloc(MAX_NUM_MESSAGES*sizeof(char*));
 	for (int k=0; k<MAX_NUM_MESSAGES; k++)
 		message[k] = (char*) malloc((MAX_LENGTH_MESSAGE+1)*sizeof(char));
-		
+}
+
+bool isTouchingBorder(int row, int col) {
+
+	if ( (row == 0) || (row == numRows-1) || (col == 0) || (col == numCols-1) ) {
+		return true;
+	}
+	return false;
+}
+
+pair<int,int> generateFreshCoordinates (Type type) {
+	// x is row y is col
+	pair<int,int> coords;
+	bool emptySpotFound = false;
+	while (emptySpotFound == false) {
+
+		int row = rand() % numRows;
+		int col = rand() % numCols;
+
+		if ((takenCoords.find(row) == takenCoords.end()) && (type == ROBOT || type == DOOR)) {
+			takenCoords.insert({row,col});
+			coords = make_pair(row,col);
+			emptySpotFound = true;
+		}
+		else if (( takenCoords.find(row) == takenCoords.end()) && (!isTouchingBorder(row,col)) && (type == BOX)) {
+			takenCoords.insert({row,col});
+			coords = make_pair(row,col);
+			emptySpotFound = true;
+		}
+	}
+	return coords;
+}
+
+void initializeLocations() {
+	//gen doors
+	for (int j = 0; j < numDoors; j++) {
+		doorLocation.push_back(generateFreshCoordinates(DOOR));
+	}
+	//gen robot/boxes
+	for(int i = 0; i < numBoxes; i++) {
+		struct Robot robot;
+		//gen robot coords
+ 		pair<int,int> roboCoords = generateFreshCoordinates(ROBOT);
+		robot.roboCD[0] = roboCoords.first;
+		robot.roboCD[1] = roboCoords.second;
+		//gen box coords
+		pair<int,int> boxCoords = generateFreshCoordinates(BOX);
+		robot.boxCD[0] = boxCoords.first;
+		robot.boxCD[1] = boxCoords.second;
+		//assign door id 
+		robot.doorID = rand() % numDoors;
+		//get location of assigned door;
+		robot.doorCD[0] = doorLocation[robot.doorID].first;
+		robot.doorCD[1] = doorLocation[robot.doorID].second;
+
+		//add robot to robot vector
+		robots.push_back(robot);
+	}
+
+	return;
+}
+
+void printEachStruct(vector<Robot> vec){
+	for(unsigned int i=0; i < vec.size(); ++i) {
+		cout << "Robot Coords: " << vec[i].roboCD[0]<< "," << vec[i].roboCD[1] << endl;
+		cout << "Box Coords: " << vec[i].boxCD[0]<< "," << vec[i].boxCD[1] << endl ;
+		cout << "Door Coords: " << vec[i].doorCD[0]<< "," << vec[i].doorCD[1] << endl ;
+		cout << "Door ID: " << vec[i].doorID << endl;
+	}
+}
+//==================================================================================
+//
+//	This is a part that you have to edit and add to.
+//
+//==================================================================================
+void initializeApplication(void)
+{
+	//	Allocate the grid
+	allocateGrid();
 	//---------------------------------------------------------------
 	//	All the code below to be replaced/removed
 	//	I initialize the grid's pixels to have something to look at
@@ -255,6 +341,10 @@ void initializeApplication(void)
 	//	normally, here I would initialize the location of my doors, boxes,
 	//	and robots, and create threads (not necessarily in that order).
 	//	For the handout I have nothing to do.
+
+	initializeLocations();
+
+	printEachStruct(robots);
 }
 
 

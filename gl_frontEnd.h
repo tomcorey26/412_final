@@ -49,8 +49,19 @@ using Direction = enum  {
 							NUM_TRAVEL_DIRECTIONS
 };
 
+using Type = enum {
+	ROBOT = 0,
+	BOX,
+	DOOR
+};
 
-
+// struct for each robo/box pair
+struct Robot {
+	int roboCD[2];
+	int boxCD[2];
+	int doorID;
+	int doorCD[2];
+};
 
 //-----------------------------------------------------------------------------
 //	Function prototypes
