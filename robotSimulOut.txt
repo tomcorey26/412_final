@@ -1,0 +1,8 @@
+Size: 300 Boxes: 3 Doors: 3
+
+Door 0: Row: 14 Col: 16 | Door 1: Row: 0 Col: 10 | Door 2: Row: 7 Col: 14 | 
+
+Box 0: row: 8 col: 2 | Box 1: row: 10 col: 8 | Box 2: row: 1 col: 4 | 
+
+Robot 0: row: 13 col: 4 Door: 0 | Robot 1: row: 9 col: 19 Door: 0 | Robot 2: row: 3 col: 4 Door: 2 | 
+

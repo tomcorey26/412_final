@@ -12,6 +12,8 @@
 #include <map>
 #include <vector>
 #include <utility>   
+#include <iostream>
+#include <fstream>
 //
 #include "gl_frontEnd.h"
 
@@ -182,7 +184,38 @@ void slowdownRobots(void)
 }
 
 
+void writeInfoToFile() {
+	ofstream outFile;
+	outFile.open("robotSimulOut.txt");
+	// write input params
+	outFile << "Size: " << to_string(numCols*numRows) << " " << "Boxes: " << to_string(numBoxes)<< " " << "Doors: " <<to_string(numDoors) << endl;
+	outFile << "" << endl;
 
+	//print door coordinates
+	for (unsigned int j = 0; j < doorLocation.size(); j++) {
+		outFile << "Door " << j << ": " << "Row: " << doorLocation[j].first << " " << "Col: " << doorLocation[j].second << " | ";
+	}
+	//space
+	outFile << endl << ""<< endl;
+
+	//box
+	for(unsigned int i=0; i < robots.size(); ++i) {
+		outFile << "Box " << i << ": " << "row: " << robots[i].boxCD[0]<< " " << "col: " << robots[i].boxCD[1] << " | " ;
+	}
+	//space
+	outFile << endl << ""<< endl;
+
+	//robots
+	for(unsigned int i=0; i < robots.size(); ++i) {
+		outFile << "Robot " << i << ": " << "row: " << robots[i].roboCD[0]<< " " << "col: " << robots[i].roboCD[1] << " Door: " << robots[i].doorID << " | "; 
+	}
+	//space
+	outFile << endl << ""<< endl;
+
+	outFile.close();
+
+	return;
+}
 
 //------------------------------------------------------------------------
 //	You shouldn't have to change anything in the main function besides
@@ -209,6 +242,9 @@ int main(int argc, char** argv)
 	
 	//	Now we can do application-level initialization
 	initializeApplication();
+
+	//print info to output
+	writeInfoToFile();
 
 	//	Now we enter the main loop of the program and to a large extend
 	//	"lose control" over its execution.  The callback functions that 
@@ -309,6 +345,7 @@ void initializeLocations() {
 	return;
 }
 
+
 void printEachStruct(vector<Robot> vec){
 	for(unsigned int i=0; i < vec.size(); ++i) {
 		cout << "Robot Coords: " << vec[i].roboCD[0]<< "," << vec[i].roboCD[1] << endl;
@@ -344,7 +381,7 @@ void initializeApplication(void)
 
 	initializeLocations();
 
-	printEachStruct(robots);
+	// printEachStruct(robots);
 }
 
 
