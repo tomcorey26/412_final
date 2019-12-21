@@ -15,6 +15,7 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <pthread.h>
 //
 #include "gl_frontEnd.h"
 
@@ -64,7 +65,9 @@ time_t startTime;
 map<int,int> takenCoords;
 
 //vector of robot structs
-vector<Robot> robots;
+Robot *robots;
+
+pthread_mutex_t	fileWriteLock;
 
 //vector of door locations
 vector< pair<int,int> > doorLocation;
@@ -108,7 +111,9 @@ void displayGridPane(void)
 	{
 		//	here I would test if the robot thread is still live
 		//						row				column			row			column
-		drawRobotAndBox(i, robots[i].roboCD[0], robots[i].roboCD[1], robots[i].boxCD[0],robots[i].boxCD[1] , robots[i].doorID);
+		if(robots[i].islive){
+			drawRobotAndBox(i, robots[i].roboCD[0], robots[i].roboCD[1], robots[i].boxCD[0],robots[i].boxCD[1] , robots[i].doorID);
+		}
 	}
 
 	for (int i=0; i<numDoors; i++)
@@ -144,7 +149,7 @@ void displayStatePane(void)
 
 	int numMessages = 3;
 	sprintf(message[0], "We have %d doors", numDoors);
-	sprintf(message[1], "I like cheese");
+	sprintf(message[1], "Num threads: %d", numLiveThreads);
 	sprintf(message[2], "Run time is %4.0f", deltaT);
 
 	//---------------------------------------------------------
@@ -200,14 +205,14 @@ void writeInfoToFile() {
 	outFile << endl << ""<< endl;
 
 	//box
-	for(unsigned int i=0; i < robots.size(); ++i) {
+	for(int i=0; i < numBoxes; ++i) {
 		outFile << "Box " << i << ": " << "row: " << robots[i].boxCD[0]<< " " << "col: " << robots[i].boxCD[1] << " | " ;
 	}
 	//space
 	outFile << endl << ""<< endl;
 
 	//robots
-	for(unsigned int i=0; i < robots.size(); ++i) {
+	for(int i=0; i < numBoxes; ++i) {
 		outFile << "Robot " << i << ": " << "row: " << robots[i].roboCD[0]<< " " << "col: " << robots[i].roboCD[1] << " Door: " << robots[i].doorID << " | "; 
 	}
 	//space
@@ -322,25 +327,25 @@ void initializeLocations() {
 		doorLocation.push_back(generateFreshCoordinates(DOOR));
 	}
 	//gen robot/boxes
+	robots = (Robot*) malloc(numBoxes * sizeof(Robot));
 	for(int i = 0; i < numBoxes; i++) {
-		struct Robot robot;
-		robot.roboId = i;
+		robots[i].roboId = i;
 		//gen robot coords
  		pair<int,int> roboCoords = generateFreshCoordinates(ROBOT);
-		robot.roboCD[0] = roboCoords.first;
-		robot.roboCD[1] = roboCoords.second;
+		robots[i].roboCD[0] = roboCoords.first;
+		robots[i].roboCD[1] = roboCoords.second;
 		//gen box coords
 		pair<int,int> boxCoords = generateFreshCoordinates(BOX);
-		robot.boxCD[0] = boxCoords.first;
-		robot.boxCD[1] = boxCoords.second;
+		robots[i].boxCD[0] = boxCoords.first;
+		robots[i].boxCD[1] = boxCoords.second;
 		//assign door id 
-		robot.doorID = rand() % numDoors;
+		robots[i].doorID = rand() % numDoors;
 		//get location of assigned door;
-		robot.doorCD[0] = doorLocation[robot.doorID].first;
-		robot.doorCD[1] = doorLocation[robot.doorID].second;
+		robots[i].doorCD[0] = doorLocation[robots[i].doorID].first;
+		robots[i].doorCD[1] = doorLocation[robots[i].doorID].second;
 
 		//add robot to robot vector
-		robots.push_back(robot);
+		// robots.push_back(robot);
 	}
 
 	return;
@@ -443,51 +448,47 @@ void writeActionToFile(ActionType type,int roboId,Direction direc) {
 	outFile.close();
 }
 
-void move(Direction direc,Robot &robot) {
+void move(Direction direc,Robot *robot) {
 	if (direc == NORTH) {
-		robot.roboCD[0] -= 1;
+		robot->roboCD[0] -= 1;
 	}
 	else if (direc == SOUTH) {
-		robot.roboCD[0] += 1;
+		robot->roboCD[0] += 1;
 	}
 	else if (direc == EAST) {
-		robot.roboCD[1] += 1;
+		robot->roboCD[1] += 1;
 	}
 	else if (direc == WEST) {
-		robot.roboCD[1] -= 1;
+		robot->roboCD[1] -= 1;
 	}
 	//TODO syncronize
-	writeActionToFile(MOVE,robot.roboId,direc);
-	displayGridPane();
-	displayStatePane();
+	writeActionToFile(MOVE,robot->roboId,direc);
 	return;
 }
 
-void push(Direction direc,Robot &robot) {
+void push(Direction direc,Robot *robot) {
 	if (direc == NORTH) {
-		robot.roboCD[0] -= 1;
-		robot.boxCD[0] -= 1;
+		robot->roboCD[0] -= 1;
+		robot->boxCD[0] -= 1;
 	}
 	else if (direc == SOUTH) {
-		robot.roboCD[0] += 1;
-		robot.boxCD[0] += 1;
+		robot->roboCD[0] += 1;
+		robot->boxCD[0] += 1;
 	}
 	else if (direc == EAST) {
-		robot.roboCD[1] += 1;
-		robot.boxCD[1] += 1;
+		robot->roboCD[1] += 1;
+		robot->boxCD[1] += 1;
 	}
 	else if (direc == WEST) {
-		robot.roboCD[1] -= 1;
-		robot.boxCD[1] -= 1;
+		robot->roboCD[1] -= 1;
+		robot->boxCD[1] -= 1;
 	}
 	//TODO syncronize
-	writeActionToFile(PUSH,robot.roboId,direc);
-	displayGridPane();
-	displayStatePane();
+	writeActionToFile(PUSH,robot->roboId,direc);
 	return;
 }
 
-void interpRoboInstructions(vector< pair<Direction,int> > directions, Robot &robot) {
+void interpRoboInstructions(vector< pair<Direction,int> > directions, Robot *robot) {
 	//move to correct spot to push box	
 	for (unsigned int i = 0; i < directions.size(); i++)
 	{
@@ -503,7 +504,7 @@ void interpRoboInstructions(vector< pair<Direction,int> > directions, Robot &rob
 	}
 }
 
-void interpBoxInstructions(pair<Direction,int> directions, Robot &robot) {
+void interpBoxInstructions(pair<Direction,int> directions, Robot *robot) {
 	Direction direc = directions.first;
 	int steps = directions.second; 
 	
@@ -514,32 +515,43 @@ void interpBoxInstructions(pair<Direction,int> directions, Robot &robot) {
 	}
 }
 
-void threadFunc(Robot &robot) {
+void* threadFunc(void* param) {
+	Robot* robot = (Robot*) param;
+	robot->islive = true;
+
+	numLiveThreads++;
+	usleep(100000);
 	//get box path
 	//returns vector of pairs direction/steps ex:{{WEST,2},{SOUTH, 5}}
-	vector< pair<Direction,int> > boxPath = computeBoxPath(robot.boxCD,robot.doorCD);
+	vector< pair<Direction,int> > boxPath = computeBoxPath(robot->boxCD,robot->doorCD);
 
-	//compute robot path to box
-	vector< pair<Direction,int> > roboPath = computeRobotPathToBox(robot.roboCD,robot.boxCD,boxPath[0].first);
+	// //compute robot path to box
+	vector< pair<Direction,int> > roboPath = computeRobotPathToBox(robot->roboCD,robot->boxCD,boxPath[0].first);
 
-	//compute robo position adjust
+	// //compute robo position adjust
 	vector< pair<Direction,int> > adjustedRoboPath = computeRobotBoxAdjust(boxPath[0].first,boxPath[1].first);
 
-	//move robot to box
+	// //move robot to box
 	interpRoboInstructions(roboPath,robot);
 
-	//horz push box
+	// //horz push box
 	interpBoxInstructions(boxPath[0],robot);
 	
-	//adjust path to push
+	// //adjust path to push
 	interpRoboInstructions(adjustedRoboPath,robot);
 
-	//vert push box
+	// //vert push box
 	interpBoxInstructions(boxPath[1],robot);
 	
-	//TODO syncronize
-	//write end to file (direction is arbitrary)
-	writeActionToFile(END,robot.roboId,NORTH);
+	// //TODO syncronize
+	// //write end to file (direction is arbitrary)
+	pthread_mutex_lock(&fileWriteLock);
+	writeActionToFile(END,robot->roboId,NORTH);
+	pthread_mutex_unlock(&fileWriteLock);
+
+	numLiveThreads--;	
+	robot->islive = false;
+	return NULL;
 }
 
 //==================================================================================
@@ -559,16 +571,25 @@ void initializeApplication(void)
 	//	normally, here I would initialize the location of my doors, boxes,
 	//	and robots, and create threads (not necessarily in that order).
 	//	For the handout I have nothing to do.
-	
+
+	//init threads
+	pthread_t robotThread[numBoxes];
+
+	//init mutexs
+	pthread_mutex_init(&fileWriteLock, NULL);
+
 	//init starting locations 
 	initializeLocations();
 
 	//print info to output
 	writeInfoToFile();
-
 	//Move each box to goal
-	for(unsigned int i = 0; i < robots.size(); i++) {
-		threadFunc(robots[i]);
+	for(int i = 0; i < numBoxes; i++) {
+		int err = pthread_create(robotThread + i, NULL, threadFunc, robots + i);
+		if (err != 0)
+		{
+			exit(1);
+		}
 	}
 	// printEachStruct(robots);
 }

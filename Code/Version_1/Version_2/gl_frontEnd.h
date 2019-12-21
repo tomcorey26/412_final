@@ -68,6 +68,7 @@ struct Robot {
 	int boxCD[2];
 	int doorID;
 	int doorCD[2];
+	bool islive;
 };
 
 //-----------------------------------------------------------------------------

@@ -1,106 +1,93 @@
 Size: 300 Boxes: 4 Doors: 3
 
-Door 0: Row: 11 Col: 2 | Door 1: Row: 2 Col: 7 | Door 2: Row: 8 Col: 16 | 
+Door 0: Row: 0 Col: 2 | Door 1: Row: 9 Col: 9 | Door 2: Row: 4 Col: 6 | 
 
-Box 0: row: 4 col: 13 | Box 1: row: 9 col: 6 | Box 2: row: 5 col: 5 | Box 3: row: 12 col: 18 | 
+Box 0: row: 2 col: 16 | Box 1: row: 11 col: 3 | Box 2: row: 5 col: 9 | Box 3: row: 3 col: 14 | 
 
-Robot 0: row: 7 col: 7 Door: 1 | Robot 1: row: 14 col: 14 Door: 1 | Robot 2: row: 13 col: 0 Door: 0 | Robot 3: row: 10 col: 19 Door: 1 | 
+Robot 0: row: 7 col: 10 Door: 1 | Robot 1: row: 13 col: 8 Door: 2 | Robot 2: row: 6 col: 12 Door: 1 | Robot 3: row: 10 col: 15 Door: 0 | 
 
+robot 3 move N
 robot 0 move E
+robot 1 move W
+robot 2 move W
+robot 3 move N
+robot 1 move W
+robot 2 move W
 robot 0 move E
+robot 1 move W
+robot 2 move N
+robot 3 move N
 robot 0 move E
+robot 2 move N
+robot 3 move N
 robot 0 move E
+robot 1 move W
+robot 3 move N
+robot 2 move W
 robot 0 move E
+robot 1 move W
+robot 2 push S
+robot 3 move N
+robot 1 move W
 robot 0 move E
+robot 3 move N
+robot 2 push S
+robot 1 move N
 robot 0 move E
+robot 2 push S
+robot 3 push W
 robot 0 move N
-robot 0 move N
-robot 0 move N
-robot 0 push W
-robot 0 push W
-robot 0 push W
-robot 0 push W
-robot 0 push W
-robot 0 push W
-robot 0 move S
-robot 0 move W
-robot 0 push N
-robot 0 push N
-robot 0 end
-robot 1 move W
-robot 1 move W
-robot 1 move W
-robot 1 move W
-robot 1 move W
-robot 1 move W
-robot 1 move W
-robot 1 move W
-robot 1 move W
 robot 1 move N
-robot 1 move N
-robot 1 move N
-robot 1 move N
-robot 1 move N
+robot 2 push S
+robot 3 push W
+robot 2 end
 robot 1 push E
+robot 0 move N
+robot 3 push W
+robot 1 push E
+robot 0 move N
+robot 3 push W
+robot 0 move N
+robot 1 push E
+robot 3 push W
+robot 0 move N
 robot 1 move S
+robot 3 push W
 robot 1 move E
+robot 0 push W
+robot 3 push W
 robot 1 push N
+robot 0 push W
+robot 3 push W
+robot 0 push W
 robot 1 push N
+robot 3 push W
 robot 1 push N
+robot 0 push W
+robot 3 push W
 robot 1 push N
+robot 0 push W
+robot 3 push W
 robot 1 push N
+robot 0 push W
+robot 3 push W
 robot 1 push N
+robot 0 push W
+robot 3 move S
+robot 0 move N
 robot 1 push N
 robot 1 end
-robot 2 move E
-robot 2 move E
-robot 2 move E
-robot 2 move E
-robot 2 move E
-robot 2 move E
-robot 2 move N
-robot 2 move N
-robot 2 move N
-robot 2 move N
-robot 2 move N
-robot 2 move N
-robot 2 move N
-robot 2 move N
-robot 2 push W
-robot 2 push W
-robot 2 push W
-robot 2 move N
-robot 2 move W
-robot 2 push S
-robot 2 push S
-robot 2 push S
-robot 2 push S
-robot 2 push S
-robot 2 push S
-robot 2 end
-robot 3 move S
-robot 3 move S
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 push W
-robot 3 move S
 robot 3 move W
+robot 0 move W
 robot 3 push N
+robot 0 push S
 robot 3 push N
-robot 3 push N
-robot 3 push N
-robot 3 push N
-robot 3 push N
-robot 3 push N
-robot 3 push N
-robot 3 push N
+robot 0 push S
 robot 3 push N
 robot 3 end
+robot 0 push S
+robot 0 push S
+robot 0 push S
+robot 0 push S
+robot 0 push S
+robot 0 end
