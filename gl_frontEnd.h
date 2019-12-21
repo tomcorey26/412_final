@@ -55,8 +55,15 @@ using Type = enum {
 	DOOR
 };
 
+using ActionType = enum {
+	MOVE = 0,
+	PUSH,
+	END
+};
+
 // struct for each robo/box pair
 struct Robot {
+	int roboId;
 	int roboCD[2];
 	int boxCD[2];
 	int doorID;

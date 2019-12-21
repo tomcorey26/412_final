@@ -324,6 +324,7 @@ void initializeLocations() {
 	//gen robot/boxes
 	for(int i = 0; i < numBoxes; i++) {
 		struct Robot robot;
+		robot.roboId = i;
 		//gen robot coords
  		pair<int,int> roboCoords = generateFreshCoordinates(ROBOT);
 		robot.roboCD[0] = roboCoords.first;
@@ -415,6 +416,33 @@ vector< pair<Direction,int> > computeRobotBoxAdjust (Direction firstDir, Directi
 	return path;
 }
 
+void writeActionToFile(ActionType type,int roboId,Direction direc) {
+	ofstream outFile;
+	outFile.open("robotSimulOut.txt",fstream::app);
+
+	char direction;
+	if (direc == NORTH){
+		direction = 'N';
+	}else if (direc == SOUTH){
+		direction = 'S';
+	}else if (direc == EAST){
+		direction = 'E';
+	}else if (direc == WEST){
+		direction = 'W';
+	}
+
+	outFile << "robot " << roboId << " ";
+	if (type == MOVE) {
+		outFile << "move " << direction << endl;
+	} else if (type == PUSH) {
+		outFile << "push " << direction << endl;
+
+	} else {
+		outFile << "end" << endl;
+	}
+	outFile.close();
+}
+
 void move(Direction direc,Robot &robot) {
 	if (direc == NORTH) {
 		robot.roboCD[0] -= 1;
@@ -428,6 +456,8 @@ void move(Direction direc,Robot &robot) {
 	else if (direc == WEST) {
 		robot.roboCD[1] -= 1;
 	}
+	//TODO syncronize
+	writeActionToFile(MOVE,robot.roboId,direc);
 	displayGridPane();
 	displayStatePane();
 	return;
@@ -450,12 +480,14 @@ void push(Direction direc,Robot &robot) {
 		robot.roboCD[1] -= 1;
 		robot.boxCD[1] -= 1;
 	}
+	//TODO syncronize
+	writeActionToFile(PUSH,robot.roboId,direc);
 	displayGridPane();
 	displayStatePane();
 	return;
 }
 
-void interpPathInstructions(vector< pair<Direction,int> > directions, Type type, Robot &robot) {
+void interpRoboInstructions(vector< pair<Direction,int> > directions, Robot &robot) {
 	//move to correct spot to push box	
 	for (int i = 0; i < directions.size(); i++)
 	{
@@ -465,14 +497,20 @@ void interpPathInstructions(vector< pair<Direction,int> > directions, Type type,
 		for (int j = 0; j < abs(steps); j++)
 		{
 			usleep(100000);
-			if (type == ROBOT) {
-				move(direc,robot);
-			}
-			else {
-				//push
-			}
+			move(direc,robot);
 		}
 		
+	}
+}
+
+void interpBoxInstructions(pair<Direction,int> directions, Robot &robot) {
+	Direction direc = directions.first;
+	int steps = directions.second; 
+	
+	for (int j = 0; j < abs(steps); j++)
+	{
+		usleep(100000);
+		push(direc,robot);
 	}
 }
 
@@ -487,34 +525,21 @@ void threadFunc(Robot &robot) {
 	//compute robo position adjust
 	vector< pair<Direction,int> > adjustedRoboPath = computeRobotBoxAdjust(boxPath[0].first,boxPath[1].first);
 
-	//walk robot
-	interpPathInstructions(roboPath,ROBOT,robot);
+	//move robot to box
+	interpRoboInstructions(roboPath,robot);
 
 	//horz push box
-	Direction direc = boxPath[0].first;
-	int steps = boxPath[0].second; 
+	interpBoxInstructions(boxPath[0],robot);
 	
-	for (int j = 0; j < abs(steps); j++)
-	{
-		usleep(100000);
-		push(direc,robot);
-	}
-
-
 	//adjust path to push
-	interpPathInstructions(adjustedRoboPath,ROBOT,robot);
+	interpRoboInstructions(adjustedRoboPath,robot);
 
 	//vert push box
-	Direction direc2 = boxPath[1].first;
-	int steps2 = boxPath[1].second; 
+	interpBoxInstructions(boxPath[1],robot);
 	
-	for (int j = 0; j < abs(steps2); j++)
-	{
-		usleep(100000);
-		push(direc2,robot);
-	}
-	
-
+	//TODO syncronize
+	//write end to file (direction is arbitrary)
+	writeActionToFile(END,robot.roboId,NORTH);
 }
 
 //==================================================================================
