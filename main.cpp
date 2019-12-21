@@ -14,6 +14,7 @@
 #include <utility>   
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
 //
 #include "gl_frontEnd.h"
 
@@ -217,6 +218,7 @@ void writeInfoToFile() {
 	return;
 }
 
+
 //------------------------------------------------------------------------
 //	You shouldn't have to change anything in the main function besides
 //	the initialization of numRows, numCos, numDoors, numBoxes.
@@ -243,8 +245,6 @@ int main(int argc, char** argv)
 	//	Now we can do application-level initialization
 	initializeApplication();
 
-	//print info to output
-	writeInfoToFile();
 
 	//	Now we enter the main loop of the program and to a large extend
 	//	"lose control" over its execution.  The callback functions that 
@@ -354,6 +354,169 @@ void printEachStruct(vector<Robot> vec){
 		cout << "Door ID: " << vec[i].doorID << endl;
 	}
 }
+
+vector< pair<Direction,int> > computeBoxPath (int boxLoc[2], int goalLoc[2]) {
+
+	vector< pair<Direction,int> > path;
+	//compute horizontal direction and steps
+	int horzDistance = goalLoc[1] - boxLoc[1];
+	Direction horzDirection = horzDistance > 0 ? EAST : WEST;
+	path.push_back(make_pair(horzDirection,horzDistance));
+
+	//compute vertical direction and steps
+	int vertDistance = goalLoc[0] - boxLoc[0];
+	Direction vertDirection = vertDistance > 0 ? SOUTH : NORTH;
+	path.push_back(make_pair(vertDirection,vertDistance));
+
+	return path;
+}
+
+vector< pair<Direction,int> > computeRobotPathToBox (int roboLoc[2], int boxLoc[2], Direction boxMoveDirection) {
+
+	vector< pair<Direction,int> > path;
+
+	//compute horizontal direction and steps
+	int horzDistance = boxLoc[1] - roboLoc[1];
+	//account for what direction the box will be moved in
+	if (boxMoveDirection == EAST) {
+		horzDistance--;
+	} else {
+		horzDistance++;
+	}
+	Direction horzDirection = horzDistance > 0 ? EAST : WEST;
+	path.push_back(make_pair(horzDirection,horzDistance));
+
+	//compute vertical direction and steps
+	int vertDistance = boxLoc[0] - roboLoc[0];
+	Direction vertDirection = vertDistance > 0 ? SOUTH : NORTH;
+	path.push_back(make_pair(vertDirection,vertDistance));
+
+	return path;
+}
+
+vector< pair<Direction,int> > computeRobotBoxAdjust (Direction firstDir, Direction secDir) {
+	vector< pair<Direction,int> > path;
+	if (firstDir == EAST && secDir == NORTH) {
+		path.push_back(make_pair(SOUTH,1));
+		path.push_back(make_pair(EAST,1));
+	}
+	else if (firstDir == EAST && secDir == SOUTH) {
+		path.push_back(make_pair(NORTH,1));
+		path.push_back(make_pair(EAST,1));
+	}
+	else if (firstDir == WEST && secDir == NORTH) {
+		path.push_back(make_pair(SOUTH,1));
+		path.push_back(make_pair(WEST,1));
+	}
+	else if (firstDir == WEST && secDir == SOUTH) {
+		path.push_back(make_pair(NORTH,1));
+		path.push_back(make_pair(WEST,1));
+	}
+	return path;
+}
+
+void move(Direction direc,Robot &robot) {
+	if (direc == NORTH) {
+		robot.roboCD[0] -= 1;
+	}
+	else if (direc == SOUTH) {
+		robot.roboCD[0] += 1;
+	}
+	else if (direc == EAST) {
+		robot.roboCD[1] += 1;
+	}
+	else if (direc == WEST) {
+		robot.roboCD[1] -= 1;
+	}
+	displayGridPane();
+	displayStatePane();
+	return;
+}
+
+void push(Direction direc,Robot &robot) {
+	if (direc == NORTH) {
+		robot.roboCD[0] -= 1;
+		robot.boxCD[0] -= 1;
+	}
+	else if (direc == SOUTH) {
+		robot.roboCD[0] += 1;
+		robot.boxCD[0] += 1;
+	}
+	else if (direc == EAST) {
+		robot.roboCD[1] += 1;
+		robot.boxCD[1] += 1;
+	}
+	else if (direc == WEST) {
+		robot.roboCD[1] -= 1;
+		robot.boxCD[1] -= 1;
+	}
+	displayGridPane();
+	displayStatePane();
+	return;
+}
+
+void interpPathInstructions(vector< pair<Direction,int> > directions, Type type, Robot &robot) {
+	//move to correct spot to push box	
+	for (int i = 0; i < directions.size(); i++)
+	{
+		Direction direc = directions[i].first;
+		int steps = directions[i].second; 
+		
+		for (int j = 0; j < abs(steps); j++)
+		{
+			usleep(100000);
+			if (type == ROBOT) {
+				move(direc,robot);
+			}
+			else {
+				//push
+			}
+		}
+		
+	}
+}
+
+void threadFunc(Robot &robot) {
+	//get box path
+	//returns vector of pairs direction/steps ex:{{WEST,2},{SOUTH, 5}}
+	vector< pair<Direction,int> > boxPath = computeBoxPath(robot.boxCD,robot.doorCD);
+
+	//compute robot path to box
+	vector< pair<Direction,int> > roboPath = computeRobotPathToBox(robot.roboCD,robot.boxCD,boxPath[0].first);
+
+	//compute robo position adjust
+	vector< pair<Direction,int> > adjustedRoboPath = computeRobotBoxAdjust(boxPath[0].first,boxPath[1].first);
+
+	//walk robot
+	interpPathInstructions(roboPath,ROBOT,robot);
+
+	//horz push box
+	Direction direc = boxPath[0].first;
+	int steps = boxPath[0].second; 
+	
+	for (int j = 0; j < abs(steps); j++)
+	{
+		usleep(100000);
+		push(direc,robot);
+	}
+
+
+	//adjust path to push
+	interpPathInstructions(adjustedRoboPath,ROBOT,robot);
+
+	//vert push box
+	Direction direc2 = boxPath[1].first;
+	int steps2 = boxPath[1].second; 
+	
+	for (int j = 0; j < abs(steps2); j++)
+	{
+		usleep(100000);
+		push(direc2,robot);
+	}
+	
+
+}
+
 //==================================================================================
 //
 //	This is a part that you have to edit and add to.
@@ -363,14 +526,7 @@ void initializeApplication(void)
 {
 	//	Allocate the grid
 	allocateGrid();
-	//---------------------------------------------------------------
-	//	All the code below to be replaced/removed
-	//	I initialize the grid's pixels to have something to look at
-	//---------------------------------------------------------------
-	//	Yes, I am using the C random generator after ranting in class that the C random
-	//	generator was junk.  Here I am not using it to produce "serious" data (as in a
-	//	simulation), only some color, in meant-to-be-thrown-away code
-	
+
 	//	seed the pseudo-random generator
 	startTime = time(NULL);
 	srand((unsigned int) startTime);
@@ -378,9 +534,17 @@ void initializeApplication(void)
 	//	normally, here I would initialize the location of my doors, boxes,
 	//	and robots, and create threads (not necessarily in that order).
 	//	For the handout I have nothing to do.
-
+	
+	//init starting locations 
 	initializeLocations();
 
+	//print info to output
+	writeInfoToFile();
+
+	//Move each box to goal
+	for(unsigned int i = 0; i < robots.size(); i++) {
+		threadFunc(robots[i]);
+	}
 	// printEachStruct(robots);
 }
 
