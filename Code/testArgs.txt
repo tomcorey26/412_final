@@ -1,0 +1,8 @@
+./robots 10 15 3 3
+./robots 40 30 10 3
+./robots 9 8 1 1
+./robots 10 15 2 2
+./robots 30 10 4 1
+./robots 10 30 4 2
+./robots 20 20 3 3
+./robots 20 20 8 3

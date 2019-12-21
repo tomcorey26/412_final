@@ -1,10 +1,5 @@
-//
-//  main.c
-//  Final Project CSC412
-//
-//  Created by Jean-Yves Hervé on 2019-12-12
-//	This is public domain code.  By all means appropriate it and change is to your
-//	heart's content.
+/** @file */ 
+
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -84,6 +79,7 @@ vector< pair<int,int> > doorLocation;
 //	Some parts are "don't touch."  Other parts need your intervention
 //	to make sure that access to critical section is properly synchronized
 //==================================================================================
+
 
 
 void displayGridPane(void)
@@ -193,7 +189,10 @@ void slowdownRobots(void)
 	robotSleepTime = (12 * robotSleepTime) / 10;
 }
 
-
+/**
+ * Writes the initial position of the doors,robots, and boxes to external file.
+ *
+ */
 void writeInfoToFile() {
 	ofstream outFile;
 	outFile.open("robotSimulOut.txt");
@@ -227,11 +226,11 @@ void writeInfoToFile() {
 	return;
 }
 
-
-//------------------------------------------------------------------------
-//	You shouldn't have to change anything in the main function besides
-//	the initialization of numRows, numCos, numDoors, numBoxes.
-//------------------------------------------------------------------------
+/**
+ * The main function of the program that initializes the application
+ * and starts the Glut event loop
+ *
+ */
 int main(int argc, char** argv)
 {
 	//	We know that the arguments  of the program  are going
@@ -283,7 +282,9 @@ void cleanupGridAndLists(void)
 	free(message);
 }
 
-
+/**
+ *	Allocates memory for the grid and its locks 
+ */
 void allocateGrid() {
 	grid = (int**) malloc(numRows * sizeof(int*));
 	tileLock = (pthread_mutex_t**)	malloc(numRows * sizeof(pthread_mutex_t*));
@@ -296,6 +297,14 @@ void allocateGrid() {
 		message[k] = (char*) malloc((MAX_LENGTH_MESSAGE+1)*sizeof(char));
 }
 
+/**
+ * Checks if passed coordinates are touching grid borders (for the boxes).
+ *
+ * @param row The row coordinate of the test coordinates
+ * @param col The col coordinate of the test coordinates
+ * 
+ * @return bool of wether or not the coordinates are touching grid border
+ */
 bool isTouchingBorder(int row, int col) {
 
 	if ( (row == 0) || (row == numRows-1) || (col == 0) || (col == numCols-1) ) {
@@ -304,12 +313,20 @@ bool isTouchingBorder(int row, int col) {
 	return false;
 }
 
+/**
+ * Generates random coordinates on the grid that have not been occupied
+ *
+ * @param type The type the coordinates will be generated for (box,robot,door)
+ * 
+ * @return pair of unoccupied coordinates
+ */
 pair<int,int> generateFreshCoordinates (Type type) {
 	// x is row y is col
 	pair<int,int> coords;
 	bool emptySpotFound = false;
+	int loopCount = 0;
 	while (emptySpotFound == false) {
-
+		loopCount++;
 		int row = rand() % numRows;
 		int col = rand() % numCols;
 
@@ -327,6 +344,10 @@ pair<int,int> generateFreshCoordinates (Type type) {
 	return coords;
 }
 
+/**
+ * Initializes starting locations for all grid objects
+ * 
+ */
 void initializeLocations() {
 	//gen doors
 	for (int j = 0; j < numDoors; j++) {
@@ -375,6 +396,14 @@ void printEachStruct(vector<Robot> vec){
 	}
 }
 
+/**
+ * Computes the paths the box must take to reach its destination
+ *
+ * @param boxLoc Coordinates of box
+ * @param goalLoc Coordinates of goal 
+ * 
+ * @return Vector of directions/step pairs that must be taken to reach goal
+ */
 vector< pair<Direction,int> > computeBoxPath (int boxLoc[2], int goalLoc[2]) {
 
 	vector< pair<Direction,int> > path;
@@ -391,6 +420,14 @@ vector< pair<Direction,int> > computeBoxPath (int boxLoc[2], int goalLoc[2]) {
 	return path;
 }
 
+/**
+ * Computes the paths the robot must take to reach its box
+ *
+ * @param roboLoc Coordinates of robot 
+ * @param boxLoc Coordinates of box
+ * 
+ * @return Vector of directions/step pairs that robot must take to reach box 
+ */
 vector< pair<Direction,int> > computeRobotPathToBox (int roboLoc[2], int boxLoc[2], Direction boxMoveDirection) {
 
 	vector< pair<Direction,int> > path;
@@ -414,6 +451,15 @@ vector< pair<Direction,int> > computeRobotPathToBox (int roboLoc[2], int boxLoc[
 	return path;
 }
 
+/**
+ * Computes the adjustment the robot must make to push
+ * the box in a different direction
+ *
+ * @param firstDir First direction the box had to go
+ * @param secondDir	Second direction the box has to go 
+ * 
+ * @return Vector of directions/step pairs that robot must take to adjust posistion 
+ */
 vector< pair<Direction,int> > computeRobotBoxAdjust (Direction firstDir, Direction secDir) {
 	vector< pair<Direction,int> > path;
 	if (firstDir == EAST && secDir == NORTH) {
@@ -435,6 +481,15 @@ vector< pair<Direction,int> > computeRobotBoxAdjust (Direction firstDir, Directi
 	return path;
 }
 
+/**
+ * Writes grid object action to external file 
+ *
+ * @param	type type of action (move,push,end) 
+ * @param	roboId id of robot 
+ * @param	direc direction of action
+ * 
+ * @return Vector of directions/step pairs that robot must take to reach box 
+ */
 void writeActionToFile(ActionType type,int roboId,Direction direc) {
 	ofstream outFile;
 	outFile.open("robotSimulOut.txt",fstream::app);
@@ -462,6 +517,13 @@ void writeActionToFile(ActionType type,int roboId,Direction direc) {
 	outFile.close();
 }
 
+/**
+ * Moves Robot in requested direction
+ *
+ * @param	direc direction being moved in	
+ * @param	robot Struct of robot	
+ * 
+ */
 void move(Direction direc,Robot *robot) {
 	//release previous tile
 	int prevRoboRow = robot->roboCD[0];
@@ -494,6 +556,13 @@ void move(Direction direc,Robot *robot) {
 	return;
 }
 
+/**
+ * Moves Robot and Box in requested direction
+ *
+ * @param	direc direction being moved in	
+ * @param	robot Struct of robot	
+ * 
+ */
 void push(Direction direc,Robot *robot) {
 	//release previous tile	
 	int prevRoboRow = robot->roboCD[0];
@@ -558,30 +627,41 @@ void interpRoboInstructions(vector< pair<Direction,int> > directions, Robot *rob
 		
 		for (int j = 0; j < abs(steps); j++)
 		{
-			usleep(1000000);
+			usleep(100000);
 			move(direc,robot);
 		}
 		
 	}
 }
 
+/**
+ * Iterprets direction/step directions for pushing box
+ *
+ * @param	directions directions to goal	
+ * @param	robot Struct of robot	
+ * 
+ */
 void interpBoxInstructions(pair<Direction,int> directions, Robot *robot) {
 	Direction direc = directions.first;
 	int steps = directions.second; 
 	
 	for (int j = 0; j < abs(steps); j++)
 	{
-		usleep(1000000);
+		usleep(100000);
 		push(direc,robot);
 	}
 }
 
+/**
+ * Thread function run by each robot that 
+ * has them push the box to the goal
+ * 
+ */
 void* threadFunc(void* param) {
 	Robot* robot = (Robot*) param;
 	robot->islive = true;
 
 	numLiveThreads++;
-	usleep(100000);
 	//get box path
 	//returns vector of pairs direction/steps ex:{{WEST,2},{SOUTH, 5}}
 	vector< pair<Direction,int> > boxPath = computeBoxPath(robot->boxCD,robot->doorCD);
@@ -618,11 +698,10 @@ void* threadFunc(void* param) {
 	return NULL;
 }
 
-//==================================================================================
-//
-//	This is a part that you have to edit and add to.
-//
-//==================================================================================
+/**
+ * Initializes and executes program
+ * 
+ */
 void initializeApplication(void)
 {
 	//	Allocate the grid
