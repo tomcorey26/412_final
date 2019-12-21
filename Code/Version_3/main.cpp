@@ -333,7 +333,6 @@ void initializeLocations() {
 		pair<int,int> doorCoords = generateFreshCoordinates(DOOR);
 		doorLocation.push_back(doorCoords);
 		//lock spot
-		pthread_mutex_lock(&tileLock[doorCoords.first][doorCoords.second]);
 	}
 	//gen robot/boxes
 	robots = (Robot*) malloc(numBoxes * sizeof(Robot));
@@ -465,23 +464,28 @@ void writeActionToFile(ActionType type,int roboId,Direction direc) {
 
 void move(Direction direc,Robot *robot) {
 	//release previous tile
-	pthread_mutex_unlock(&tileLock[robot->roboCD[0]][robot->roboCD[1]]);
+	int prevRoboRow = robot->roboCD[0];
+	int prevRoboCol = robot->roboCD[1];
 
 	if (direc == NORTH) {
+		pthread_mutex_lock(&tileLock[robot->roboCD[0]-1][robot->roboCD[1]]);
 		robot->roboCD[0] -= 1;
 	}
 	else if (direc == SOUTH) {
+		pthread_mutex_lock(&tileLock[robot->roboCD[0]+1][robot->roboCD[1]]);
 		robot->roboCD[0] += 1;
 	}
 	else if (direc == EAST) {
+		pthread_mutex_lock(&tileLock[robot->roboCD[0]][robot->roboCD[1]+1]);
 		robot->roboCD[1] += 1;
 	}
 	else if (direc == WEST) {
+		pthread_mutex_lock(&tileLock[robot->roboCD[0]][robot->roboCD[1]-1]);
 		robot->roboCD[1] -= 1;
 	}
 
-	//lock new tile
-	pthread_mutex_lock(&tileLock[robot->roboCD[0]][robot->roboCD[1]]);
+	//unlock previous tile
+	pthread_mutex_unlock(&tileLock[prevRoboRow][prevRoboCol]);
 
 	//sync file write
 	pthread_mutex_lock(&fileWriteLock);
@@ -492,29 +496,51 @@ void move(Direction direc,Robot *robot) {
 
 void push(Direction direc,Robot *robot) {
 	//release previous tile	
-	pthread_mutex_unlock(&tileLock[robot->roboCD[0]][robot->roboCD[1]]);
-	pthread_mutex_unlock(&tileLock[robot->boxCD[0]][robot->boxCD[1]]);
+	int prevRoboRow = robot->roboCD[0];
+	int prevRoboCol = robot->roboCD[1];
+
+	//prev box tile
+	int prevBoxRow = robot->boxCD[0];
+	int prevBoxCol = robot->boxCD[1];
 
 	if (direc == NORTH) {
-		robot->roboCD[0] -= 1;
+		//lock new tile
+		pthread_mutex_lock(&tileLock[robot->boxCD[0]-1][robot->boxCD[1]]);
 		robot->boxCD[0] -= 1;
+		pthread_mutex_unlock(&tileLock[prevBoxRow][prevBoxCol]);
+
+		pthread_mutex_lock(&tileLock[robot->roboCD[0]-1][robot->roboCD[1]]);
+		robot->roboCD[0] -= 1;
+		pthread_mutex_unlock(&tileLock[prevRoboRow][prevRoboCol]);
 	}
 	else if (direc == SOUTH) {
-		robot->roboCD[0] += 1;
+		pthread_mutex_lock(&tileLock[robot->boxCD[0]+1][robot->boxCD[1]]);
 		robot->boxCD[0] += 1;
+		pthread_mutex_unlock(&tileLock[prevBoxRow][prevBoxCol]);
+		pthread_mutex_lock(&tileLock[robot->roboCD[0]+1][robot->roboCD[1]]);
+		robot->roboCD[0] += 1;
+		pthread_mutex_unlock(&tileLock[prevRoboRow][prevRoboCol]);
 	}
 	else if (direc == EAST) {
-		robot->roboCD[1] += 1;
+		pthread_mutex_lock(&tileLock[robot->boxCD[0]][robot->boxCD[1]+1]);
 		robot->boxCD[1] += 1;
+		pthread_mutex_unlock(&tileLock[prevBoxRow][prevBoxCol]);
+		pthread_mutex_lock(&tileLock[robot->roboCD[0]][robot->roboCD[1]+1]);
+		robot->roboCD[1] += 1;
+		pthread_mutex_unlock(&tileLock[prevRoboRow][prevRoboCol]);
 	}
 	else if (direc == WEST) {
-		robot->roboCD[1] -= 1;
+		pthread_mutex_lock(&tileLock[robot->boxCD[0]][robot->boxCD[1]-1]);
 		robot->boxCD[1] -= 1;
-	}
+		pthread_mutex_unlock(&tileLock[prevBoxRow][prevBoxCol]);
 
-	//lock new tile
-	pthread_mutex_lock(&tileLock[robot->roboCD[0]][robot->roboCD[1]]);
-	pthread_mutex_lock(&tileLock[robot->boxCD[0]][robot->boxCD[1]]);
+		pthread_mutex_lock(&tileLock[robot->roboCD[0]][robot->roboCD[1]-1]);
+		robot->roboCD[1] -= 1;
+		pthread_mutex_unlock(&tileLock[prevRoboRow][prevRoboCol]);
+	}
+	//unlock previous tile
+	pthread_mutex_unlock(&tileLock[prevBoxRow][prevBoxCol]);
+	pthread_mutex_unlock(&tileLock[prevRoboRow][prevRoboCol]);
 
 	//syncronize
 	pthread_mutex_lock(&fileWriteLock);
@@ -532,7 +558,7 @@ void interpRoboInstructions(vector< pair<Direction,int> > directions, Robot *rob
 		
 		for (int j = 0; j < abs(steps); j++)
 		{
-			usleep(100000);
+			usleep(1000000);
 			move(direc,robot);
 		}
 		
@@ -545,7 +571,7 @@ void interpBoxInstructions(pair<Direction,int> directions, Robot *robot) {
 	
 	for (int j = 0; j < abs(steps); j++)
 	{
-		usleep(100000);
+		usleep(1000000);
 		push(direc,robot);
 	}
 }
@@ -583,6 +609,9 @@ void* threadFunc(void* param) {
 	pthread_mutex_lock(&fileWriteLock);
 	writeActionToFile(END,robot->roboId,NORTH);
 	pthread_mutex_unlock(&fileWriteLock);
+
+	pthread_mutex_unlock(&tileLock[robot->roboCD[0]][robot->roboCD[1]]);
+	pthread_mutex_unlock(&tileLock[robot->boxCD[0]][robot->boxCD[1]]);
 
 	numLiveThreads--;	
 	robot->islive = false;
