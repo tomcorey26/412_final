@@ -1,0 +1,116 @@
+Size: 300 Boxes: 4 Doors: 3
+
+Door 0: Row: 8 Col: 7 | Door 1: Row: 11 Col: 11 | Door 2: Row: 9 Col: 19 | 
+
+Box 0: row: 1 col: 10 | Box 1: row: 6 col: 6 | Box 2: row: 3 col: 6 | Box 3: row: 13 col: 17 | 
+
+Robot 0: row: 2 col: 15 Door: 1 | Robot 1: row: 4 col: 6 Door: 1 | Robot 2: row: 5 col: 11 Door: 2 | Robot 3: row: 7 col: 1 Door: 0 | 
+
+robot 2 move W
+robot 1 move W
+robot 3 move E
+robot 0 move W
+robot 1 move S
+robot 3 move E
+robot 2 move W
+robot 0 move W
+robot 1 move S
+robot 2 move W
+robot 0 move W
+robot 3 move E
+robot 1 push E
+robot 3 move E
+robot 0 move W
+robot 2 move W
+robot 1 push E
+robot 0 move W
+robot 3 move E
+robot 2 move W
+robot 1 push E
+robot 2 move W
+robot 3 move E
+robot 0 move W
+robot 1 push E
+robot 0 move N
+robot 3 move E
+robot 2 move N
+robot 1 push E
+robot 0 push E
+robot 2 move N
+robot 3 move E
+robot 1 move N
+robot 2 push E
+robot 0 move N
+robot 3 move E
+robot 2 push E
+robot 3 move E
+robot 0 move E
+robot 1 move E
+robot 2 push E
+robot 3 move E
+robot 0 push S
+robot 1 push S
+robot 2 push E
+robot 0 push S
+robot 3 move E
+robot 1 push S
+robot 2 push E
+robot 0 push S
+robot 1 push S
+robot 3 move E
+robot 2 push E
+robot 1 push S
+robot 3 move E
+robot 0 push S
+robot 2 push E
+robot 1 push S
+robot 3 move E
+robot 0 push S
+robot 1 end
+robot 2 push E
+robot 3 move E
+robot 0 push S
+robot 2 push E
+robot 3 move E
+robot 0 push S
+robot 2 push E
+robot 3 move S
+robot 0 push S
+robot 2 push E
+robot 0 push S
+robot 3 move S
+robot 2 push E
+robot 3 move S
+robot 0 push S
+robot 0 end
+robot 2 push E
+robot 3 move S
+robot 2 move N
+robot 3 move S
+robot 2 move E
+robot 3 move S
+robot 2 push S
+robot 3 push W
+robot 2 push S
+robot 3 push W
+robot 2 push S
+robot 3 push W
+robot 2 push S
+robot 3 push W
+robot 2 push S
+robot 3 push W
+robot 2 push S
+robot 2 end
+robot 3 push W
+robot 3 push W
+robot 3 push W
+robot 3 push W
+robot 3 push W
+robot 3 move S
+robot 3 move W
+robot 3 push N
+robot 3 push N
+robot 3 push N
+robot 3 push N
+robot 3 push N
+robot 3 end
